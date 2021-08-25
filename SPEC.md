@@ -80,7 +80,8 @@ foo 1 key="val" 3 {
 
 A bare Identifier is composed of any unicode codepoint other than [non-initial
 characters](#non-inidital-characters), followed by any number of unicode
-codepoints other than [non-identifier characters](#non-identifier-characters).
+codepoints other than [non-identifier characters](#non-identifier-characters),
+so long as this doesn't produce something confusable for a [Number](#number).
 Identifiers are terminated by [Whitespace](#whitespace) or
 [Newlines](#newline).
 
@@ -304,14 +305,14 @@ Note that for the purpose of new lines, CRLF is considered _a single newline_.
 ```
 nodes := linespace* (node nodes?)? linespace*
 
-node := ('/-' ws*)? identifier (node-space node-props-and-args)* (node-space* node-children ws*)? node-terminator
+node := ('/-' ws*)? identifier (node-space node-space* node-props-and-args)* (node-space* node-children ws*)? node-space* node-terminator
 node-props-and-args := ('/-' ws*)? (prop | value)
 node-children := ('/-' ws*)? '{' nodes '}'
 node-space := ws* escline ws* | ws+
 node-terminator := single-line-comment | newline | ';' | eof
 
 identifier := string | bare-identifier
-bare-identifier := (identifier-char - digit) identifier-char*
+bare-identifier := (identifier-char - digit - sign) identifier-char* | sign ((identifier-char - digit) identifier-char*)?
 identifier-char := unicode - linespace - [\{}<>;[]=,"]
 prop := identifier '=' value
 value := string | number | boolean | 'null'
