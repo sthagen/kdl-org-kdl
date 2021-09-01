@@ -9,6 +9,10 @@ There's a living [specification](SPEC.md), as well as various
 [implementations](#implementations). You can also check out the [FAQ](#faq) to
 answer all your burning questions!
 
+In addition to a spec for KDL itself, there are also standard specs for [a KDL
+Query Language](QUERY-SPEC.md) based on CSS selectors, and [a KDL Schema
+Language](SCHEMA-SPEC.md) loosely based on JSON Schema.
+
 The language is based on [SDLang](https://sdlang.org), with a number of
 modifications and clarifications on its syntax and behavior.
 
@@ -27,6 +31,14 @@ free to jump in and give us your 2 cents!
 * Java: [kdl4j](https://github.com/hkolbeck/kdl4j)
 * PHP: [kdl-php](https://github.com/kdl-org/kdl-php)
 * Python: [kdl-py](https://github.com/daeken/kdl-py)
+
+## Compatibility Test Suite
+
+There is a [compatibility test suite](tests/README.md) available for KDL
+implementors to check that their implementations are actually spec-compatible.
+
+The implementations above are not guaranteed to pass this test suite in its
+entirety, but in the future, may be required to in order to be included here.
 
 ## Editor Support
 
@@ -203,6 +215,16 @@ foo bar=true "baz" quux=false 1 2 3
 1. Ease of de/serialization
 1. Ease of implementation
 
+## Compatibility with JSON and XML
+
+There are two specifications for writing KDL that can be losslessly translated
+between it and JSON or XML. These specifications define a stricter _subset_ of
+KDL that, even if not entirely idiomatic, is still valid and fits into the
+data models of the other two languages:
+
+* [JSON in KDL](JSON-IN-KDL.md)
+* [XML in KDL](XML-IN-KDL.md)
+
 ## FAQ
 
 #### How do you pronounce KDL?
@@ -267,7 +289,9 @@ forgiving syntax without being so flexible as to allow certain classes of
 unfortunate mistakes. It also has much more flexibility around how to
 represent data.
 
-If you need to interoperate with a service that consumes or emits JSON, or for some other reason have need to write "JSON in KDL", [we have JiK, an official microsyntax for losslessly encoding JSON](JSON-IN-KDL.md).
+If you need to interoperate with a service that consumes or emits JSON, or for
+some other reason have need to write "JSON in KDL", [we have JiK, an official
+microsyntax for losslessly encoding JSON](JSON-IN-KDL.md).
 
 #### What about TOML?
 
@@ -295,6 +319,10 @@ Finally, KDL is **not** a markup language. XML or HTML do a much better job of
 "marking up" a text document with special tags, although KDL can still be
 useful for templating engines that want to be more strict about text
 fragments.
+
+If you need to interoperate with a service that consumes or emits XML, or for
+some other reason have need to write "XML in KDL", [we have XiK, an official
+microsyntax for losslessly encoding XML](XML-IN-KDL.md).
 
 ## License
 

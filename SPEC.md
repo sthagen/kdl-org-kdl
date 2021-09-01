@@ -12,7 +12,7 @@ XML, and as do many of its semantics. You can use KDL both as a configuration
 language, and a data exchange or storage format, if you so choose.
 
 The bulk of this document is dedicated to a long-form description of all
-[Components](#components) of a KDL documeent. There is also a much more terse
+[Components](#components) of a KDL document. There is also a much more terse
 [Grammar](#full-grammar) at the end of the document that covers most of the
 rules, with some semantic exceptions involving the data model.
 
@@ -81,7 +81,9 @@ foo 1 key="val" 3 {
 A bare Identifier is composed of any unicode codepoint other than [non-initial
 characters](#non-inidital-characters), followed by any number of unicode
 codepoints other than [non-identifier characters](#non-identifier-characters),
-so long as this doesn't produce something confusable for a [Number](#number).
+so long as this doesn't produce something confusable for a [Number](#number),
+[Boolean](#boolean), or [Null](#null).
+
 Identifiers are terminated by [Whitespace](#whitespace) or
 [Newlines](#newline).
 
@@ -100,7 +102,7 @@ The following characters cannot be used anywhere in a bare
 
 * Any codepoint with hexadecimal value `0x20` or below.
 * Any codepoint with hexadecimal value higher than `0x10FFFF`.
-* Any of "\\<>{};[]()=,\""
+* Any of "\\/<>{};[]()=,\""
 
 ### Line Continuation
 
@@ -128,7 +130,7 @@ immediately by a `=`, and then a [Value](#value).
 Properties should be interpreted left-to-right, with rightmost properties with
 identical names overriding earlier properties. That is:
 
-```
+```kdl
 node a=1 a=2
 ```
 
@@ -153,10 +155,30 @@ each other (not counting Properties).
 Arguments _MAY_ be prefixed with `/-` to "comment out" the entire token and
 make it act as plain whitespace, even if it spreads across multiple lines.
 
-### Example
+#### Example
 
 ```kdl
 my-node 1 2 3 "a" "b" "c"
+```
+
+### Children Block
+
+A children block is a block of [Nodes](#node), surrounded by `{` and `}`. They
+are an optional terminator for nodes, and create a hierarchy of KDL nodes.
+
+Regular node termination rules apply, which means multiple nodes can be
+included in a single-line children block, as long as they're all terminated by
+`;`.
+
+#### Example
+
+```kdl
+parent {
+    child1
+    child2
+}
+
+parent { child1; child2; }
 ```
 
 ### Value
@@ -229,7 +251,7 @@ There are four syntaxes for Numbers: Decimal, Hexadecimal, Octal, and Binary.
 * Decimal numbers are a bit more special:
     * They have no radix prefix.
     * They use digits `0` through `9`, which may be separated by `_`.
-    * They may optionally include a decimal separator `.`, followed by more digits.
+    * They may optionally include a decimal separator `.`, followed by more digits, which may again be separated by `_`.
     * They may optionally be followed by `E` or `e`, an optional `-` or `+`, and more digits, to represent an exponent value.
 
 ### Boolean
@@ -312,10 +334,11 @@ node-space := ws* escline ws* | ws+
 node-terminator := single-line-comment | newline | ';' | eof
 
 identifier := string | bare-identifier
-bare-identifier := (identifier-char - digit - sign) identifier-char* | sign ((identifier-char - digit) identifier-char*)?
-identifier-char := unicode - linespace - [\(){}<>;[]=,"]
+bare-identifier := ((identifier-char - digit - sign) identifier-char* | sign ((identifier-char - digit) identifier-char*)?) - keyword
+identifier-char := unicode - linespace - [\/(){}<>;[]=,"]
+keyword := boolean | 'null'
 prop := identifier '=' value
-value := string | number | boolean | 'null'
+value := string | number | keyword
 
 string := raw-string | escaped-string
 escaped-string := '"' character* '"'
@@ -329,7 +352,7 @@ raw-string-quotes := '"' .* '"'
 
 number := decimal | hex | octal | binary
 
-decimal := integer ('.' [0-9]+)? exponent?
+decimal := integer ('.' [0-9] [0-9_]*)? exponent?
 exponent := ('e' | 'E') integer
 integer := sign? [0-9] [0-9_]*
 sign := '+' | '-'
