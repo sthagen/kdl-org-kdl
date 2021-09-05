@@ -78,8 +78,8 @@ foo 1 key="val" 3 {
 
 ### Identifier
 
-A bare Identifier is composed of any unicode codepoint other than [non-initial
-characters](#non-inidital-characters), followed by any number of unicode
+A bare Identifier is composed of any Unicode codepoint other than [non-initial
+characters](#non-initial-characters), followed by any number of Unicode
 codepoints other than [non-identifier characters](#non-identifier-characters),
 so long as this doesn't produce something confusable for a [Number](#number),
 [Boolean](#boolean), or [Null](#null).
@@ -449,6 +449,6 @@ bom := '\u{FFEF}'
 unicode-space := See Table (All White_Space unicode characters which are not `newline`)
 
 single-line-comment := '//' ^newline+ (newline | eof)
-multi-line-comment := '/*' (commented-block | multi-line-comment) '*/'
-commented-block := ('*' [^\/] | [^*])*
+multi-line-comment := '/*' commented-block
+commented-block := '*/' | (multi-line-comment | '*' | '/' | [^*/]+) commented-block
 ```
