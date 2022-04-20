@@ -18,6 +18,12 @@ rules, with some semantic exceptions involving the data model.
 
 KDL is designed to be easy to read _and_ easy to implement.
 
+In this document, references to "left" or "right" refer to directions in the
+*data stream* towards the beginning or end, respectively; in other words,
+the directions if the data stream were only ASCII text. They do not refer
+to the writing direction of text, which can flow in either direction,
+depending on the characters used.
+
 ## Components
 
 ### Document
@@ -260,8 +266,8 @@ IEEE 754-2008 decimal floating point numbers
 * `country-subdivision`: ISO 3166-2 country subdivision code.
 * `email`: RFC5302 email address.
 * `idn-email`: RFC6531 internationalized email address.
-* `hostname`: RFC1132 internet hostname.
-* `idn-hostname`: RFC5890 internationalized internet hostname.
+* `hostname`: RFC1132 internet hostname (only ASCII segments)
+* `idn-hostname`: RFC5890 internationalized internet hostname (only `xn--`-prefixed ASCII "punycode" segments, or non-ASCII segments)
 * `ipv4`: RFC2673 dotted-quad IPv4 address.
 * `ipv6`: RFC2373 IPv6 address.
 * `url`: RFC3986 URI.
@@ -398,6 +404,13 @@ space](https://www.unicode.org/Public/UCD/latest/ucd/PropList.txt):
 | Medium Mathematical Space | `U+205F`  |
 | Ideographic Space    | `U+3000`  |
 
+#### Multi-line comments
+
+In addition to single-line comments using `//`, comments can also be started
+with `/*` and ended with `*/`. These comments can span multiple lines. They
+are allowed in all positions where [Whitespace](#whitespace) is allowed and
+can be nested.
+
 ### Newline
 
 The following characters [should be treated as new
@@ -420,8 +433,8 @@ Note that for the purpose of new lines, CRLF is considered _a single newline_.
 ```
 nodes := linespace* (node nodes?)? linespace*
 
-node := ('/-' node-space*)? type? identifier (node-space node-space* node-props-and-args)* (node-space* node-children ws*)? node-space* node-terminator
-node-props-and-args := ('/-' node-space*)? (prop | value)
+node := ('/-' node-space*)? type? identifier (node-space+ node-prop-or-arg)* (node-space* node-children ws*)? node-space* node-terminator
+node-prop-or-arg := ('/-' node-space*)? (prop | value)
 node-children := ('/-' node-space*)? '{' nodes '}'
 node-space := ws* escline ws* | ws+
 node-terminator := single-line-comment | newline | ';' | eof
@@ -446,9 +459,10 @@ raw-string-quotes := '"' .* '"'
 
 number := decimal | hex | octal | binary
 
-decimal := integer ('.' [0-9] [0-9_]*)? exponent?
-exponent := ('e' | 'E') integer
-integer := sign? [0-9] [0-9_]*
+decimal := sign? integer ('.' integer)? exponent?
+exponent := ('e' | 'E') sign? integer
+integer := digit (digit | '_')*
+digit := [0-9]
 sign := '+' | '-'
 
 hex := sign? '0x' hex-digit (hex-digit | '_')*
