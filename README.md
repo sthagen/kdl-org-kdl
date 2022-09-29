@@ -32,11 +32,13 @@ free to jump in and give us your 2 cents!
 * Dart: [kdl-dart](https://github.com/danini-the-panini/kdl-dart)
 * Java: [kdl4j](https://github.com/hkolbeck/kdl4j)
 * PHP: [kdl-php](https://github.com/kdl-org/kdl-php)
-* Python: [kdl-py](https://github.com/tabatkins/kdlpy), [cuddle](https://github.com/djmattyg007/python-cuddle)
+* Python: [kdl-py](https://github.com/tabatkins/kdlpy), [cuddle](https://github.com/djmattyg007/python-cuddle), [ckdl](https://github.com/tjol/ckdl)
 * Elixir: [kuddle](https://github.com/IceDragon200/kuddle)
 * XSLT: [xml2kdl](https://github.com/Devasta/XML2KDL)
 * Haskell: [Hustle](https://github.com/fuzzypixelz/Hustle)
 * .NET: [Kadlet](https://github.com/oledfish/Kadlet)
+* C: [ckdl](https://github.com/tjol/ckdl)
+* C++: [kdlpp](https://github.com/tjol/ckdl) (part of ckdl, requires C++20)
 
 ## Compatibility Test Suite
 
@@ -49,6 +51,7 @@ entirety, but in the future, may be required to in order to be included here.
 ## Editor Support
 
 * [VS Code](https://marketplace.visualstudio.com/items?itemName=kdl-org.kdl&ssr=false#review-details)
+* [vim](https://github.com/imsnif/kdl.vim)
 
 ## Overview
 
