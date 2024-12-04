@@ -3,8 +3,8 @@
 This is the semi-formal specification for KDL, including the intended data
 model and the grammar.
 
-This document describes KDL version `2.0.0-draft.5`. It was released on
-2024-11-28.
+This document describes KDL version `2.0.0-draft.6`. It was released on
+2024-12-04.
 
 ## Introduction
 
@@ -61,30 +61,34 @@ rather than the last-modified date, with `(published)date`.)
 Following the name are zero or more [Arguments](#argument) or
 [Properties](#property), separated by either [whitespace](#whitespace) or [a
 slash-escaped line continuation](#line-continuation). Arguments and Properties
-may be interspersed in any order, much like is common with positional
-arguments vs options in command line tools.
+may be interspersed in any order, much like is common with positional arguments
+vs options in command line tools. Collectively, Arguments and Properties may be
+referred to as "Entries".
 
 [Children](#children-block) can be placed after the name and the optional
-Arguments and Properties, possibly separated by either whitespace or a
+Entries, possibly separated by either whitespace or a
 slash-escaped line continuation.
 
-Arguments are ordered relative to each other (but not relative to Properties)
-and that order must be preserved in order to maintain the semantics.
+Arguments are ordered relative to each other and that order must be preserved in
+order to maintain the semantics. Properties between Arguments do not affect
+Argument ordering.
 
-By contrast, Property order _SHOULD NOT_ matter to implementations.
-[Children](#children-block) should be used if an order-sensitive key/value
-data structure must be represented in KDL.
+By contrast, Properties _SHOULD NOT_ be assumed to be presented in a given
+order. [Children](#children-block) should be used if an order-sensitive
+key/value data structure must be represented in KDL. Cf. JSON objects
+preserving key order.
 
 Nodes _MAY_ be prefixed with [Slashdash](#slashdash-comments) to "comment out"
 the entire node, including its properties, arguments, and children, and make
 it act as plain whitespace, even if it spreads across multiple lines.
 
-Finally, a node is terminated by either a [Newline](#newline), a semicolon (`;`)
-or the end of the file/stream (an `EOF`).
+Finally, a node is terminated by either a [Newline](#newline), a semicolon
+(`;`), the end of a child block (`}`) or the end of the file/stream (an `EOF`).
 
 #### Example
 
 ```kdl
+// `foo` will have an Argument value list like `[1, 3]`.
 foo 1 key=val 3 {
     bar
     (role)baz 1 2
@@ -178,7 +182,7 @@ Values _MUST_ be either [Arguments](#argument) or values of
 [Properties](#property). Only [String](#string) values may be used as
 [Node](#node) names or [Property](#property) keys.
 
-Values (both as arguments and as properties) _MAY_ be prefixed by a single
+Values (both as arguments and in properties) _MAY_ be prefixed by a single
 [Type Annotation](#type-annotation).
 
 ### Type Annotation
@@ -436,14 +440,14 @@ The string contains the literal characters `hello\n\r\asd"#world`
 
 ### Multi-line Strings
 
-When a Quoted or Raw String spans multiple lines with literal, non-escaped
-Newlines, it follows a special multi-line syntax that automatically "dedents"
-the string, allowing its value to be indented to a visually matching level if
-desired.
+Quoted and Raw Strings support multiple lines with literal, non-escaped
+Newlines. They must use a special multi-line syntax, and they automatically
+"dedent" the string, allowing its value to be indented to a visually matching
+level as desired.
 
 A Multi-line string _MUST_ start with a [Newline](#newline) immediately
-following its opening `"`. Its final line _MUST_ contain only whitespace,
-followed by a single closing `"`. All in-between lines that contain
+following its opening `"""` (whether Quoted or Raw). Its final line _MUST_ contain only whitespace,
+followed by a closing `"""`. All in-between lines that contain
 non-newline characters _MUST_ start with _at least_ the exact same whitespace
 as the final line (precisely matching codepoints, not merely counting characters).
 They may contain additional whitespace following this prefix.
@@ -453,12 +457,13 @@ Whitespace of the last line, and the matching Whitespace prefix on all
 intermediate lines. The first and last Newline can be the same character (that
 is, empty multi-line strings are legal).
 
-Strings with literal Newlines that do not immediately start with a Newline and
-whose final `"` is not preceeded by optional whitespace and a Newline are
-illegal.
-
 In other words, the final line specifies the whitespace prefix that will be
 removed from all other lines.
+
+Multi-line Strings that do not immediately start with a Newline and whose final
+`"""` is not preceeded by optional whitespace and a Newline are illegal. This
+also means that `"""` may not be used for a single-line String (e.g.
+`"""foo"""`).
 
 It is a syntax error for any body lines of the multi-line string to not match
 the whitespace prefix of the last line with the final quote.
@@ -470,7 +475,20 @@ Literal Newline sequences in Multi-line Strings must be normalized to a single
 becomes a single `LF` during parsing.
 
 This normalization does not apply to non-literal Newlines entered using escape
-sequences.
+sequences. That is:
+
+```kdl
+multi-line """
+    \r\n[CRLF]
+    foo[CRLF]
+    """
+```
+
+becomes:
+
+```kdl
+"\r\n\nfoo"
+```
 
 For clarity: this normalization is for individual sequences. That is, the
 literal sequence `CRLF CRLF` becomes `LF LF`, not `LF`.
@@ -478,11 +496,11 @@ literal sequence `CRLF CRLF` becomes `LF LF`, not `LF`.
 #### Example
 
 ```kdl
-multi-line "
+multi-line """
         foo
     This is the base indentation
             bar
-    "
+    """
 ```
 
 This example's string value will be:
@@ -502,11 +520,11 @@ If the last line wasn't indented as far,
 it won't dedent the rest of the lines as much:
 
 ```kdl
-multi-line "
+multi-line """
         foo
     This is no longer on the left edge
             bar
-  "
+  """
 ```
 
 This example's string value will be:
@@ -524,11 +542,11 @@ Equivalent to `"      foo\n  This is no longer on the left edge\n          bar"`
 Empty lines can contain any whitespace, or none at all, and will be reflected as empty in the value:
 
 ```kdl
-multi-line "
+multi-line """
     Indented a bit
 
     A second indented paragraph.
-    "
+    """
 ```
 
 This example's string value will be:
@@ -543,25 +561,29 @@ Equivalent to `"Indented a bit.\n\nA second indented paragraph."`
 
 -----------
 
-The following yield syntax errors:
+The following yield **syntax errors**:
 
 ```kdl
-multi-line "
-  closing quote with non-whitespace prefix"
+multi-line """can't be single line"""
 ```
 
 ```kdl
-multi-line "stuff
-  "
+multi-line """
+  closing quote with non-whitespace prefix"""
+```
+
+```kdl
+multi-line """stuff
+  """
 ```
 
 ```kdl
 // Every line must share the exact same prefix as the closing line.
-multi-line "[\n]
+multi-line """[\n]
 [tab]a[\n]
 [space][space]b[\n]
 [space][tab][\n]
-[tab]"
+[tab]"""
 ```
 
 #### Interaction with Whitespace Escapes
@@ -577,24 +599,25 @@ For example, the following example is illegal:
 
 ```kdl
   // Equivalent to trying to write a string containing `foo\nbar\`.
-  "
+  """
   foo
   bar\
-  "
+  """
 ```
 
 while the following example is allowed
 ```kdl
-  "
+  """
   foo \
 bar
   baz
-  \   "
-  // this is equivalent to
-  "
+  \   """
+  
+  // equivalent to
+  """
   foo bar
   baz
-  "
+  """
 ```
 
 ### Number
@@ -719,7 +742,7 @@ annotations, if present:
   slashdashed or not, may follow a slashdashed children block.
   
 A slashdash may be be followed by any amount of whitespace, including newlines and
-comments, before the element that it comments out.
+comments (other than other slashdashes), before the element that it comments out.
 
 ### Newline
 
@@ -728,20 +751,21 @@ lines](https://www.unicode.org/versions/Unicode13.0.0/ch05.pdf):
 
 | Acronym | Name            | Code Pt |
 |---------|-----------------|---------|
+| CRLF    | Carriage Return and Line Feed | `U+000D` + `U+000A` |
 | CR      | Carriage Return | `U+000D`  |
 | LF      | Line Feed       | `U+000A`  |
-| CRLF    | Carriage Return and Line Feed | `U+000D` + `U+000A` |
 | NEL     | Next Line       | `U+0085`  |
 | FF      | Form Feed       | `U+000C`  |
 | LS      | Line Separator  | `U+2028`  |
 | PS      | Paragraph Separator | `U+2029` |
 
-Note that for the purpose of new lines, CRLF is considered _a single newline_.
+Note that for the purpose of new lines, the specific sequence `CRLF` is
+considered _a single newline_.
 
 ### Disallowed Literal Code Points
 
 The following code points may not appear literally anywhere in the document.
-They may be represented in Strings (but not Raw Strings) using `\u{}`.
+They may be represented in Strings (but not Raw Strings) using [Unicode Escapes](#escapes) (`\u{...}`).
 
 * The codepoints `U+0000-0008` or the codepoints `U+000E-001F`  (various
   control characters).
@@ -795,7 +819,7 @@ dotted-ident := sign? '.' ((identifier-char - digit) identifier-char*)?
 identifier-char := unicode - unicode-space - newline - [\\/(){};\[\]"#=] - disallowed-literal-code-points - equals-sign
 disallowed-keyword-identifiers := 'true' - 'false' - 'null' - 'inf' - '-inf' - 'nan'
 
-quoted-string := '"' (single-line-string-body | newline multi-line-string-body newline unicode-space*) '"'
+quoted-string := '"' single-line-string-body '"' | '"""' newline multi-line-string-body newline unicode-space*) '"""'
 single-line-string-body := (string-character - newline)*
 multi-line-string-body := string-character*
 string-character := '\' escape | [^\\"] - disallowed-literal-code-points
@@ -803,7 +827,7 @@ escape := ["\\bfnrts] | 'u{' hex-digit{1, 6} '}' | (unicode-space | newline)+
 hex-digit := [0-9a-fA-F]
 
 raw-string := '#' raw-string-quotes '#' | '#' raw-string '#'
-raw-string-quotes := '"' (single-line-raw-string-body | newline multi-line-raw-string-body newline unicode-space*) '"'
+raw-string-quotes := '"' single-line-raw-string-body '"' | '"""' newline multi-line-raw-string-body newline unicode-space*) '"""'
 single-line-raw-string-body := (unicode - newline - disallowed-literal-code-points)*
 multi-line-raw-string-body := (unicode - disallowed-literal-code-points)*
 
@@ -870,4 +894,4 @@ Specifically:
   For example, `^foo` means "must not match `foo`".
 * A single definition may be split over multiple lines. Newlines are treated as
   spaces.
-* `//` at the beginning of a line is used for comments.
+* `//` followed by text on its own line is used as comment syntax.
