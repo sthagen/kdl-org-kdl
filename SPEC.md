@@ -3,8 +3,8 @@
 This is the semi-formal specification for KDL, including the intended data
 model and the grammar.
 
-This document describes KDL version `2.0.0-draft.6`. It was released on
-2024-12-04.
+This document describes KDL version `2.0.0-draft.7`. It was released on
+2024-12-10.
 
 ## Compatibility
 
@@ -873,7 +873,8 @@ hex-digit := [0-9a-fA-F]
 
 raw-string := '#' raw-string-quotes '#' | '#' raw-string '#'
 raw-string-quotes := '"' single-line-raw-string-body '"' | '"""' newline multi-line-raw-string-body newline unicode-space*) '"""'
-single-line-raw-string-body := (unicode - newline - disallowed-literal-code-points)*
+single-line-raw-string-body := '' | (single-line-raw-string-char - '"') single-line-raw-string-char* | '"' (single-line-raw-string-char - '"') single-line-raw-string-char*
+single-line-raw-string-char := unicode - newline - disallowed-literal-code-points
 multi-line-raw-string-body := (unicode - disallowed-literal-code-points)*
 
 // Numbers
@@ -904,7 +905,7 @@ unicode-space := See Table (All White_Space unicode characters which are not `ne
 single-line-comment := '//' ^newline* (newline | eof)
 multi-line-comment := '/*' commented-block
 commented-block := '*/' | (multi-line-comment | '*' | '/' | [^*/]+) commented-block
-slashdash := '/-' line-space*
+slashdash := '/-' (node-space | line-space)*
 
 // Whitespace
 ws := unicode-space | multi-line-comment
