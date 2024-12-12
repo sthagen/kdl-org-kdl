@@ -436,10 +436,10 @@ Its first line _MUST_ immediately start with a [Newline](#newline)
 after its opening `"""`.
 Its final line _MUST_ contain only whitespace
 before the closing `"""`.
-All in-between lines that contain non-newline characters
+All in-between lines that contain non-newline, non-whitespace characters
 _MUST_ start with _at least_ the exact same whitespace as the final line
 (precisely matching codepoints, not merely counting characters or "size");
-they may contain additional whitesapce following this prefix. The lines in
+they may contain additional whitespace following this prefix. The lines in
 between may contain unescaped `"` (but no unescaped `"""` as this would close
 the string).
 
@@ -855,7 +855,7 @@ value := type? node-space* (string | number | keyword)
 type := '(' node-space* string node-space* ')'
 
 // Strings
-string := identifier-string | quoted-string | raw-string
+string := identifier-string | quoted-string | raw-string ¶
 
 identifier-string := unambiguous-ident | signed-ident | dotted-ident
 unambiguous-ident := ((identifier-char - digit - sign - '.') identifier-char*) - disallowed-keyword-strings
@@ -864,7 +864,7 @@ dotted-ident := sign? '.' ((identifier-char - digit) identifier-char*)?
 identifier-char := unicode - unicode-space - newline - [\\/(){};\[\]"#=] - disallowed-literal-code-points - equals-sign
 disallowed-keyword-identifiers := 'true' - 'false' - 'null' - 'inf' - '-inf' - 'nan'
 
-quoted-string := '"' single-line-string-body '"' | '"""' newline multi-line-string-body newline unicode-space*) '"""'
+quoted-string := '"' single-line-string-body '"' | '"""' newline multi-line-string-body newline unicode-space* '"""'
 single-line-string-body := (string-character - newline)*
 multi-line-string-body := (('"' | '""')? string-character)*
 string-character := '\' escape | [^\\"] - disallowed-literal-code-points
@@ -872,10 +872,10 @@ escape := ["\\bfnrts] | 'u{' hex-digit{1, 6} '}' | (unicode-space | newline)+
 hex-digit := [0-9a-fA-F]
 
 raw-string := '#' raw-string-quotes '#' | '#' raw-string '#'
-raw-string-quotes := '"' single-line-raw-string-body '"' | '"""' newline multi-line-raw-string-body newline unicode-space* '"""'
-single-line-raw-string-body := '' | (single-line-raw-string-char - '"') single-line-raw-string-char* | '"' (single-line-raw-string-char - '"') single-line-raw-string-char*
+raw-string-quotes := '"' single-line-raw-string-body '"' | '"""' newline multi-line-raw-string-body '"""'
+single-line-raw-string-body := '' | (single-line-raw-string-char - '"') single-line-raw-string-char*? | '"' (single-line-raw-string-char - '"') single-line-raw-string-char*?
 single-line-raw-string-char := unicode - newline - disallowed-literal-code-points
-multi-line-raw-string-body := (unicode - disallowed-literal-code-points)*
+multi-line-raw-string-body := (unicode - disallowed-literal-code-points)*?
 
 // Numbers
 number := keyword-number | hex | octal | binary | decimal
@@ -927,9 +927,20 @@ Specifically:
   characters using hex values (`\u{FEFF}`), and for escaping `\` itself
   (`\\`).
 * `*` is used for "zero or more", `+` is used for "one or more", and `?` is
-  used for "zero or one".
+  used for "zero or one". Per standard regex semantics, `*` and `+` are *greedy*;
+  they match as many instances as possible without failing the match.
+* `*?` (used only in raw strings) indicates a *non-greedy* match;
+  it matches as *few* instances as possible without failing the match.
+* `¶` is a *cut point*. It always matches and consumes no characters,
+  but once matched, the parser is not allowed to backtrack past that point in the source.
+  If a parser would rewind past the cut point, it must instead fail the overall parse,
+  as if it had run out of options.
+  (This is only used with the `raw-string` production,
+  to ensure the first instance of the appropriate closing quote sequence
+  is guaranteed to be the end of the raw string,
+  rather than allowing it to potentially consume more of the document unexpectedly.)
 * `()` can be used to group matches that must be matched together.
-* `a | b` means `a or b`, whichever matches first. If multipe items are before
+* `a | b` means `a or b`, whichever matches first. If multiple items are before
   a `|`, they are a single group. `a b c | d` is equivalent to `(a b c) | d`.
 * `[]` are used for regex-style character matches, where any character between
   the brackets will be a single match. `\` is used to escape `\`, `[`, and
