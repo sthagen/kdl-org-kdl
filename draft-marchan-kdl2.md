@@ -523,6 +523,12 @@ is, empty multi-line strings are legal).
 In other words, the final line specifies the whitespace prefix that will be
 removed from all other lines.
 
+Whitespace-only lines (that is, lines containing only literal whitespace
+characters, not including whitespace escapes like `\t`) always represent
+empty lines in the string value, regardless of what whitespace they
+contain (if any). They do not have to start with the same whitespace prefix
+that other lines do; all characters on the line are ignored.
+
 Multi-line Strings that do not immediately start with a Newline and whose final
 `"""` is not preceeded by optional whitespace and a Newline are illegal. This
 also means that `"""` may not be used for a single-line String (e.g.
@@ -781,6 +787,13 @@ There are five syntaxes for Numbers: Keywords, Decimal, Hexadecimal, Octal, and 
   - They use digits `0` through `9`, which may be separated by `_`.
   - They may optionally include a decimal separator `.`, followed by more digits, which may again be separated by `_`.
   - They may optionally be followed by `E` or `e`, an optional `-` or `+`, and more digits, to represent an exponent value.
+
+In all cases where the above says that digits "may be separated by `_`",
+this means that between any two digits, or after the digits, any number of
+consecutive `_` characters can appear. Underscores are not allowed *before* the digits.
+That is, `1___2` and `12____` are valid (and both equivalent to just `12`), but
+`_12` is *not* a valid number (it will instead parse as an identifier string),
+nor is `0x_1a` (it will simply be invalid).
 
 Note that, similar to JSON and some other languages,
 numbers without an integer digit (such as `.1`) are illegal.
