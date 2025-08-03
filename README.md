@@ -93,6 +93,7 @@ of some examples of KDL in the wild (either v1, v2, or both):
 * [mise](https://mise.jdx.dev/) - dev tools, env vars, task runner
 * [Camping](https://github.com/camping/camping) - Ruby web microframework
 * [Iron Vault](https://ironvault.quest) - VTT (Virtual Tabletop) plugin for Obsidian for the Ironsworn family of games
+* [Microsoft TypeScript DOM Generator](https://github.com/microsoft/TypeScript-DOM-lib-generator) - Tool for generating DOM-related TypeScript and JavaScript library files
 * You?
 
 ## Implementations
@@ -146,6 +147,7 @@ entirety, but in the future, may be required to in order to be included here.
 * [VS Code](https://marketplace.visualstudio.com/items?itemName=kdl-org.kdl&ssr=false#review-details)\*
 * [vim](https://github.com/imsnif/kdl.vim)
 * [Kate](https://github.com/larsgw/katepart-kdl)\*
+* [Zed](https://zed.dev/extensions/kdl)
 
 \* Supports KDL 2.0.0
 
